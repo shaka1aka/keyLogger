@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
         }
 
         close(fd);
+        usleep(500000);
     }
 
     close(sock);
