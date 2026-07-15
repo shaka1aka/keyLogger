@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    init_log_directory(); // Make sure logs exists (TODO later: if not, create directory)
+    init_log_directory();
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
