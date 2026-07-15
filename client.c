@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     int bytes_read; // How many bytes the kernel gave
 
     char *target_ip = (char *)"127.0.0.1"; // Default ip
-    int target_port = 9021; // Default port
+    int target_port = 8080; // Default port
 
     for (int i = 1; i < argc; i++)
     {
