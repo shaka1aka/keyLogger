@@ -84,6 +84,8 @@ void *handle_client(void *arg)
         pthread_exit(NULL);
     }
 
+    printf("(+) Victim ID for %s:%d is %s\n", client->client_ip, client->client_port, victim_id);
+
     // Log file name based on victim ID, not IP/port
     snprintf(filename, sizeof(filename), "logs/%s.log", victim_id);
 
