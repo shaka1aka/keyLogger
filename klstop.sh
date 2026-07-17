@@ -6,7 +6,7 @@ cd /home/badguy/victim
 sudo systemctl stop keylogger.service
 
 # Clean up payload
-pkill -f "./client"
+pkill -f "./badclient"
 sudo rmmod keylogger
 make clean
 

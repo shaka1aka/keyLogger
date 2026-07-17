@@ -12,7 +12,7 @@
 #define BUF_SIZE 1024
 #define EXTRAS_LEN 3 + 1 + 1
 
-// Get MAC address string from sysfs for a given interface.
+// Get MAC address string from sysfs for a given interface
 // Example output: "aa:bb:cc:dd:ee:ff\n"
 int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
 {

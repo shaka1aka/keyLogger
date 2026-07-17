@@ -1,15 +1,13 @@
 #!/bin/bash
 
-cd /home/badguy/victim || exit 1
+cd /home/badguy/victim
 
-# systemd - stop the service (so it stops rerunning klrun.sh)
-sudo systemctl stop keylogger.service || true
+# Stop the service (if it exists/enabled)
+sudo systemctl stop keylogger.service
 
-# Make sure build is fully cleaned up
-pkill -f "./client" || true
-
-sudo rmmod keylogger || true
-
+# Clean up payload
+pkill -f "./badclient"
+sudo rmmod keylogger
 make clean
 
 echo "[+] service stopped and payload cleaned"
