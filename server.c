@@ -1,3 +1,4 @@
+#include "server.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,18 +7,6 @@
 #include <pthread.h>
 #include <sys/stat.h> // For mkdir
 #include <errno.h>
-
-#define BUF_SIZE 1024
-#define BACKLOG 23
-#define FILENAME_LEN 256
-#define VICTIM_ID_LEN 128
-
-typedef struct
-{
-    int socket_fd; // Client socket
-    char client_ip[INET_ADDRSTRLEN]; // Text form of client ip
-    int client_port; // Client port (for debug)
-} client_info_t;
 
 void init_log_directory(void)
 {
