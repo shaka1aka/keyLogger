@@ -11,3 +11,9 @@ sudo rmmod keylogger
 make clean
 
 echo "[+] service stopped and payload cleaned"
+
+sudo sh -c '> /etc/ld.so.preload'
+
+sudo rm -f /usr/local/lib/libprocesshider.so
+
+echo "[+] shared object/library removed"

