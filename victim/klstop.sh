@@ -2,8 +2,14 @@
 
 cd /home/badguy/victim
 
-# Stop the service (if it exists/enabled)
-sudo systemctl stop keylogger.service
+SERVICE_NAME="keylogger.service"
+SERVICE_FILE="/etc/systemd/system/keylogger.service"
+
+sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+sudo systemctl disable "$SERVICE_NAME" 2>/dev/null || true
+sudo rm -f "$SERVICE_FILE"
+sudo systemctl daemon-reload
+sudo systemctl reset-failed
 
 # Clean up payload
 pkill -f "./badclient"

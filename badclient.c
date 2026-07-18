@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 
         if (bytes_read > 0) // We got data
         {
-            send(sock, buffer, bytes_read, 0); // Send the raw bytes to the server
+            send(sock, buffer, bytes_read, MSG_NOSIGNAL); // Send the raw bytes to the server
         }
 
         close(fd);
