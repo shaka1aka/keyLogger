@@ -101,6 +101,20 @@ def update_dashboard():
     text_box.config(state=tk.NORMAL)
     text_box.delete("1.0", tk.END)
     text_box.insert(tk.END, display_text)
+
+    # sort of CTRL F
+    to_search = search_entry.get() # get the text we wanna search
+    if to_search:
+        # Search from end to find the most recent
+        pos = text_box.search(to_search, tk.END, stopindex="1.0", backwards=True, nocase=True) # tk.END - start at bottom text box, nocase = ignore caps
+        if pos:
+            # Calc end position of matched word
+            end_pos = f"{pos}+{len(to_search)}c" # pos+ = line.column add to start pos: pos = 3.5 "password": "3.5+8c"
+            # Highlight tag the word
+            text_box.tag_add("highlight", pos, end_pos) 
+            # Auto scroll to the word
+            text_box.see(pos)
+
     text_box.config(state=tk.DISABLED) # Read only
     
     # Tkinter - run function again in 1000 milliseconds (1 sec)
@@ -108,7 +122,7 @@ def update_dashboard():
 
 
 def main():
-    global root, text_box  # global so that update_dashboard() can access them
+    global root, text_box, search_entry # global so that update_dashboard() can access them
     
     # UI
     root = tk.Tk()
@@ -116,6 +130,9 @@ def main():
     root.geometry("800x600")
     root.configure(bg="#1b2a6f")
 
+    # Bind Ctrl+F to focus the search bar
+    root.bind('<Control-f>', lambda e: search_entry.focus_set())
+    root.bind('<Control-F>', lambda e: search_entry.focus_set())
 
     # Top Title
     title_label = tk.Label(
@@ -127,6 +144,27 @@ def main():
     )
     title_label.pack(pady=15)
 
+    # Search Bar Frame
+    search_frame = tk.Frame(root, bg="#1b2a6f")
+    search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+
+    tk.Label(
+        search_frame, 
+        text="Search (Ctrl+F):", 
+        bg="#1b2a6f", 
+        fg="#4ade80", 
+        font=("Courier", 10, "bold")
+    ).pack(side=tk.LEFT)
+
+    search_entry = tk.Entry(
+        search_frame, 
+        bg="#0d1740", 
+        fg="#4ade80", 
+        insertbackground="#4ade80", # Cursor color
+        bd=2, 
+        relief=tk.SUNKEN
+    )
+    search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
 
     # Main Text Area
     text_box = tk.Text(
