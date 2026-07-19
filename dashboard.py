@@ -10,6 +10,17 @@ TAB_SIZE = 4
 
 # To remember the text so we wont refresh if nothing changed
 previous_text = ""
+show_all_matches = True # True = show all, false = show last
+
+def toggle_search_mode():
+    global show_all_matches
+    show_all_matches = not show_all_matches # Flip
+    
+    # Update text on button to match current mode
+    if show_all_matches:
+        mode_button.config(text="Mode: Show All")
+    else:
+        mode_button.config(text="Mode: Show Last")
 
 def apply_backspace(lines):
     if not lines:
@@ -115,15 +126,34 @@ def update_dashboard():
     # Search new word
     to_search = search_entry.get() 
     if to_search:
-        # Search from end to find the most recent
-        pos = text_box.search(to_search, tk.END, stopindex="1.0", backwards=True, nocase=True) # tk.END - start at bottom text box, nocase = ignore caps
-        if pos:
-            # Calc end position of matched word
-            end_pos = f"{pos}+{len(to_search)}c" 
-            # Highlight tag the word
-            text_box.tag_add("highlight", pos, end_pos) 
-            # Auto scroll to the word
-            text_box.see(pos)
+        if show_all_matches:
+            # show all - while loop
+            start_pos = "1.0"
+            last_found_pos = None
+            while True:
+                pos = text_box.search(to_search, start_pos, stopindex=tk.END, nocase=True) # Start to end
+                if not pos:
+                    break 
+                
+                # Calc end position of matched word
+                end_pos = f"{pos}+{len(to_search)}c" 
+                # Highlight tag the word
+                text_box.tag_add("highlight", pos, end_pos) 
+                
+                start_pos = end_pos # Move forward so loop stops at some point
+                last_found_pos = pos
+
+        else:
+            # Search from end to find the recent
+            pos = text_box.search(to_search, tk.END, stopindex="1.0", backwards=True, nocase=True) # tk.END - start at bottom text box, nocase = ignore caps
+            if pos:
+                # Calc end position of matched word
+                end_pos = f"{pos}+{len(to_search)}c" 
+                # Highlight tag the word
+                text_box.tag_add("highlight", pos, end_pos) 
+                # Auto scroll to the word
+                text_box.see(pos)
+
 
     # Tkinter - run function again in 1000 milliseconds (1 sec)
     root.after(REFRESH_SECONDS * 1000, update_dashboard)
@@ -131,7 +161,7 @@ def update_dashboard():
 
 
 def main():
-    global root, text_box, search_entry  # global so that update_dashboard() can access them
+    global root, text_box, search_entry, mode_button  # global so that update_dashboard() can access them
     
     # UI
     root = tk.Tk()
@@ -176,6 +206,20 @@ def main():
         relief=tk.SUNKEN
     )
     search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
+
+    # Button switch
+    mode_button = tk.Button(
+        search_frame,
+        text="Mode: Show All",
+        bg="#0d1740",
+        fg="#4ade80",
+        activebackground="#4ade80",
+        activeforeground="#0d1740",
+        bd=2,
+        font=("Courier", 9, "bold"),
+        command=toggle_search_mode
+    )
+    mode_button.pack(side=tk.LEFT)
 
     # Main text
     text_box = tk.Text(
