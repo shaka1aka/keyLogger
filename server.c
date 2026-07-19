@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include <sys/stat.h> // For mkdir
+#include <sys/stat.h>
 #include <errno.h>
 
 void init_log_directory(void)
