@@ -2,7 +2,6 @@ import tkinter as tk
 from pathlib import Path
 import re
 
-
 LOG_DIR = Path("logs")
 TOKEN_PATTERN = re.compile(r"\[(BS|TAB|DEL|SHIFT|CAPS)\]")
 REFRESH_SECONDS = 1
@@ -11,6 +10,7 @@ TAB_SIZE = 4
 # To remember the text so we wont refresh if nothing changed
 previous_text = ""
 show_all_matches = True # True = show all, false = show last
+
 
 def toggle_search_mode():
     global show_all_matches
@@ -22,6 +22,7 @@ def toggle_search_mode():
     else:
         mode_button.config(text="Mode: Show Last")
 
+
 def apply_backspace(lines):
     if not lines:
         lines.append("")
@@ -30,6 +31,7 @@ def apply_backspace(lines):
         lines[-1] = lines[-1][:-1] # Cut off the last char
     elif len(lines) > 1: # If curr line empty, and there are more lines before, remove this/last line
         lines.pop()
+
 
 def parse_log(raw_text):
     raw_text = raw_text.replace("\\[", "[") # \\ take actual "\" not the escape char
@@ -77,6 +79,7 @@ def parse_log(raw_text):
 
     return "\n".join(lines) # Finished with this line and we glue it to the next like with \n
 
+
 def read_all_logs():
     clients = []
 
@@ -96,6 +99,7 @@ def read_all_logs():
         })
 
     return clients
+
 
 def update_dashboard():
     global previous_text
@@ -157,7 +161,6 @@ def update_dashboard():
 
     # Tkinter - run function again in 1000 milliseconds (1 sec)
     root.after(REFRESH_SECONDS * 1000, update_dashboard)
-
 
 
 def main():
@@ -243,6 +246,7 @@ def main():
 
     # Start the graphics window
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
