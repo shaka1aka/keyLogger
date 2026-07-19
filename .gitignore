@@ -1,5 +1,7 @@
 client
 
-server
+out/
 
 logs/
+
+victim/
