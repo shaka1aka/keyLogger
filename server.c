@@ -78,7 +78,7 @@ int read_victim_id(int sock, char *id_buf, size_t id_buf_size)
  * and appends keystrokes to both the terminal and the specific log file
  * 
  * @param arg Pointer to a client_info_t struct containing socket and IP details
- * @return NULL when the client disconnects or an error occurs.
+ * @return NULL when the client disconnects or an error occurs
  */
 void *handle_client(void *arg)
 {
