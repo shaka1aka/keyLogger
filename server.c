@@ -120,6 +120,7 @@ void *handle_client(void *arg)
         int bytes_received = recv(client->socket_fd, buffer, sizeof(buffer) - 1, 0);
         if (bytes_received <= 0)
         {
+            printf("\n");
             printf("(-) Client %s:%d disconnected.\n", client->client_ip, client->client_port);
             break;
         }

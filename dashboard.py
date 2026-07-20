@@ -34,7 +34,7 @@ def apply_backspace(lines):
 
 
 def parse_log(raw_text):
-    raw_text = raw_text.replace("\\[", "[") # \\ take actual "\" not the escape char
+    raw_text = raw_text.replace("\\[", "[") # \\ - take actual "\" not the escape char
     raw_text = raw_text.replace("\\]", "]")
 
     lines = [""]
@@ -181,7 +181,7 @@ def main():
     # Top title
     title_label = tk.Label(
         root, 
-        text="--------- KEYLOGGER DASHBOARD ---------", 
+        text="------------- KEYLOGGER DASHBOARD -------------", 
         bg="#1b2a6f",
         fg="#4ade80",
         font=("Courier", 16, "bold")

