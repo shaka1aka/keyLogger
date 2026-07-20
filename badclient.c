@@ -9,11 +9,21 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 
-// Get MAC address string from sysfs for a given interface
-// Example output: "aa:bb:cc:dd:ee:ff\n"
+/**
+ * @brief Gets the MAC address of a network interface (Internal network)
+ * 
+ * Reads the MAC address directly from the sysfs file system 
+ * and removes the newline character in the end of the string
+ * Example output: "aa:bb:cc:dd:ee:ff\n"
+ * 
+ * @param ifname       The name of the network interface ("enp0s8")
+ * @param mac_str      Buffer to store the retrieved MAC address string
+ * @param mac_str_size The size of the provided buffer
+ * @return 0 on success, -1 if the file cannot be opened or read
+ */
 int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
 {
-    char path[256];
+    char path[SYSFS_PATH];
     // Construct the sysfs path using the provided interface name
     snprintf(path, sizeof(path), "/sys/class/net/%s/address", ifname);
 
@@ -24,7 +34,7 @@ int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
         return -1;
     }
 
-    // Read up to mac_str_size - 1 characters from the file into the buffer
+    // Read up to mac_str_size - 1 characters from the file into the mac_str buffer
     if (!fgets(mac_str, mac_str_size, f))
     {
         perror("fgets mac sysfs");
@@ -44,6 +54,17 @@ int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
     return 0;
 }
 
+/**
+ * @brief Hashes a string using SHA-256 and formats it as hex
+ * 
+ * Computes the raw binary SHA-256 hash of the input string and 
+ * converts each byte into a 2-character hexadecimal string.
+ * 
+ * @param input        The input string to be hashed (the MAC address)
+ * @param out_hex      Buffer to store the result hex string
+ * @param out_hex_size The size of the output buffer
+ * @return 0 on success, -1 if the buffer is too small
+ */
 // Hash a string with SHA-256 and return hex string.
 // Returns 0 on success, -1 on failure.
 int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)

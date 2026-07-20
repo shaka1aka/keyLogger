@@ -1,8 +1,8 @@
 /**
  * @file keylogger.c
- * @brief Kernel space keylogger module.
+ * @brief Kernel space keylogger module
  *
- * Captures keyboard events and exposes them to user space via a procfs entry.
+ * Captures keyboard events and exposes them to userspace via a procfs entry
  * 
  */
 
