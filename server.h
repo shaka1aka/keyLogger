@@ -16,10 +16,4 @@ typedef struct
     int client_port;
 } client_info_t;
 
-void init_log_directory(void);
-
-int read_victim_id(int sock, char *id_buf, size_t id_buf_size);
-
-void *handle_client(void *arg);
-
 #endif /* SERVER_H */
