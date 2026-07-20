@@ -14,9 +14,12 @@
 #include <stddef.h>
 #include <openssl/sha.h>
 
-#define SYSFS_PATH 256
+#define DEFAULT_IP (char *)"127.0.0.1"
+#define DEFAULT_PORT 8080
+#define SYSFS_PATH_LEN 256
 #define PROC_FILE "/proc/hidden_bridge"
 #define BUF_SIZE 1024
+#define MAC_SIZE 64
 #define EXTRAS_LEN 3 + 1 + 1
 
 #endif /* BADCLIENT_H */

