@@ -107,7 +107,7 @@ int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
 int main(int argc, char *argv[])
 {
     char buffer[BUF_SIZE]; // To store the text we get from kernel
-    int fd; // Will hold the id number Linux gives us when we open the file
+    int fd; // Will hold the proc file descriptor
     int bytes_read; // How many bytes the kernel gave
 
     char *target_ip = DEFAULT_IP;
