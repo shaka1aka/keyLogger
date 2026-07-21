@@ -84,6 +84,7 @@ int hash_string_sha256(const char *input, char *out_hex, size_t out_hex_size)
     {
         // Converting raw binary data (hash) into a readable hexadecimal string.
         // Format each byte as a 2 character(0x0A, 0x1B, 0xFF) hex string and append it
+        // calc offset in out_hex: 0x2, 1x2, 2x2, ...
         snprintf(out_hex + i * 2, 3, "%02X", hash[i]); // out_hex = 0A1BFF\0
     }
 
