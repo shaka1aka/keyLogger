@@ -46,13 +46,13 @@ static int get_dir_name(DIR* dirp, char* buf, size_t size)
     // To convert that integer back into a path, 
     // self - redirects to the current process's directory
     snprintf(tmp, sizeof(tmp), "/proc/self/fd/%d", fd);
-    ssize_t ret = readlink(tmp, buf, size);
+    ssize_t ret = readlink(tmp, buf, size); // ret = len of path
     if(ret == -1) 
     {
         return 0;
     }
 
-    buf[ret] = 0;
+    buf[ret] = 0; // To not step into garbage memory since readlink doesnt add a null terminator
     return 1;
 }
 
@@ -99,8 +99,8 @@ static int get_process_name(char* pid, char* buf)
 
     fclose(f);
 
-    // A place to dump the first piece of data we are about 
-    // to parse out of the string, which we dont actually use
+    // A place to dump the first piece of data we are about
+    // to parse out of the string, which we dont actually use ("1234")
     int unused;
     // Ignore ( and read everything until you hit a closing )
     sscanf(tmp, "%d (%[^)]s", &unused, buf); // Captures "name" and puts into buf
